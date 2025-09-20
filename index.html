@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Knowledge Base – Clenzy / HiZoo / SLA</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="description" content="Unified FAQ & SLA knowledge base for Clenzy, HiZoo, and internal support playbooks." />
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg width='128' height='128' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='64' cy='64' r='60' fill='%239047d8'/%3E%3Ctext x='64' y='74' font-size='54' text-anchor='middle' fill='white' font-family='Arial'%3EK%3C/text%3E%3C/svg%3E">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: { sans: ['system-ui','Inter','ui-sans-serif','Arial','sans-serif'] },
+        boxShadow: {
+          soft: '0 10px 25px -4px rgba(0,0,0,0.25), 0 2px 6px -1px rgba(0,0,0,0.15)'
+        }
+      }
+    }
+  }
+</script>
+<style>
+:root { --ease: cubic-bezier(.4,.2,.2,1); }
+body { scroll-behavior: smooth; }
+.accordion-body {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 280ms var(--ease), opacity 280ms var(--ease);
+  opacity: 0;
+}
+.accordion-body.open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+.accordion-inner { overflow: hidden; }
+.rotate-90 { transform: rotate(90deg); }
+mark.search-highlight {
+  background: #fde68a;
+  color: #1f2937;
+  padding: 0 .2em;
+  border-radius: 2px;
+}
+::selection {
+  background: #f0abfc;
+  color: #3b0764;
+}
+</style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-indigo-950 via-purple-900 to-fuchsia-900 text-white font-sans antialiased">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <header class="mb-10">
+      <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
+        <div>
+          <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight">Knowledge Base</h1>
+          <p class="mt-3 text-white/80 max-w-2xl text-sm sm:text-base leading-relaxed">
+            Unified FAQ & SLA library for Clenzy, HiZoo, and internal support playbooks.
+            Press <kbd class="px-1.5 py-0.5 rounded bg-white/10 text-xs border border-white/10">/</kbd> to focus search.
+          </p>
+        </div>
+        <div class="flex flex-wrap items-center gap-3">
+          <span class="inline-flex items-center gap-2 bg-white/10 backdrop-blur px-4 py-2 rounded-full ring-1 ring-white/15 text-xs font-medium">
+            <span class="w-2 h-2 rounded-full bg-fuchsia-400"></span>
+            <span>Live Filters</span>
+          </span>
+          <span class="inline-flex items-center gap-2 bg-white/10 backdrop-blur px-4 py-2 rounded-full ring-1 ring-white/15 text-xs font-medium">
+            <span class="w-2 h-2 rounded-full bg-indigo-400"></span>
+            <span>Accessible Accordions</span>
+          </span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Filters -->
+    <section aria-label="Filters" class="mb-8 space-y-6">
+      <div class="grid gap-5 lg:grid-cols-4">
+        <!-- Search -->
+        <div class="lg:col-span-2">
+          <label for="search" class="block text-xs uppercase tracking-wide font-semibold text-white/60 mb-2">Search</label>
+          <div class="relative">
+            <input id="search" type="search" placeholder="Type to search questions, answers & tags..."
+              class="w-full rounded-xl bg-white/10 backdrop-blur px-4 py-3 pr-12 text-sm placeholder:text-white/40 ring-1 ring-white/15 focus:ring-2 focus:ring-fuchsia-400/70 outline-none transition"
+              autocomplete="off" />
+            <div class="absolute inset-y-0 right-3 flex items-center">
+              <kbd class="text-[10px] px-1.5 py-1 rounded bg-white/10 border border-white/15 text-white/60 font-medium">/</kbd>
+            </div>
+          </div>
+        </div>
+
+        <!-- Collection -->
+        <div>
+          <label for="collection-filter" class="block text-xs uppercase tracking-wide font-semibold text-white/60 mb-2">Collection</label>
+            <select id="collection-filter"
+              class="w-full rounded-xl bg-white/10 backdrop-blur px-4 py-3 text-sm ring-1 ring-white/15 focus:ring-2 focus:ring-fuchsia-400/70 outline-none">
+              <option value="">All Collections</option>
+            </select>
+        </div>
+
+        <!-- Category -->
+        <div>
+          <label for="category-filter" class="block text-xs uppercase tracking-wide font-semibold text-white/60 mb-2">Category</label>
+            <select id="category-filter"
+              class="w-full rounded-xl bg-white/10 backdrop-blur px-4 py-3 text-sm ring-1 ring-white/15 focus:ring-2 focus:ring-fuchsia-400/70 outline-none">
+              <option value="">All Categories</option>
+            </select>
+        </div>
+      </div>
+
+      <!-- Tags -->
+      <div>
+        <div class="flex items-center justify-between mb-2">
+          <label class="block text-xs uppercase tracking-wide font-semibold text-white/60">Tag Filters</label>
+          <button id="clear-tags" type="button" class="text-xs px-2 py-1 rounded bg-white/10 hover:bg-white/15 border border-white/10 text-white/60 transition">
+            Clear Tags
+          </button>
+        </div>
+        <div id="tags-panel" class="flex flex-wrap gap-2"></div>
+      </div>
+
+      <!-- Global controls -->
+      <div class="flex flex-wrap gap-3 items-center">
+        <button id="expand-all" type="button"
+          class="px-4 py-2 text-xs font-semibold uppercase tracking-wide rounded-full bg-fuchsia-500 hover:bg-fuchsia-400 active:bg-fuchsia-600 transition shadow-soft ring-1 ring-white/10">
+          Expand All
+        </button>
+        <button id="collapse-all" type="button"
+          class="px-4 py-2 text-xs font-semibold uppercase tracking-wide rounded-full bg-white/10 hover:bg-white/15 active:bg-white/20 transition ring-1 ring-white/15">
+          Collapse All
+        </button>
+        <button id="clear-filters" type="button"
+          class="px-4 py-2 text-xs font-semibold uppercase tracking-wide rounded-full bg-white/10 hover:bg-white/15 active:bg-white/20 transition ring-1 ring-white/15">
+          Clear Filters
+        </button>
+        <span id="visible-count" class="ml-auto text-xs text-white/60"></span>
+      </div>
+    </section>
+
+    <!-- Collections -->
+    <main id="collections-container" class="space-y-10" aria-live="polite"></main>
+
+    <!-- Empty -->
+    <div id="no-results" class="hidden mt-16 rounded-2xl border border-dashed border-white/15 bg-white/5 backdrop-blur px-6 py-10 text-center">
+      <p class="text-sm text-white/70">No results found. Adjust your search or filters.</p>
+    </div>
+
+    <footer class="mt-16 text-center text-[10px] text-white/50 tracking-wide">
+      Keyboard: / focus search • Arrow Up/Down • Home/End • Enter/Space toggle • Esc clear
+    </footer>
+  </div>
+
+<script>
+/* DATA */
+const DATA = {
+  collections: [
+    {
+      id: "clenzy",
+      name: "Clenzy",
+      categories: [
+        {
+          id: "clenzy-product-usage",
+          name: "Product & Usage",
+          items: [
+            { id: "clenzy-pu-what-is", question: "What is Clenzy?", answer: "A nicotine-free vitamin diffuser that preserves the vaping ritual while providing wellness benefits.", tags: ["product","usage"] },
+            { id: "clenzy-pu-duration", question: "How long does it last?", answer: "Approximately 500 puffs (about 1 week).", tags: ["usage"] },
+            { id: "clenzy-pu-flavors", question: "Flavors?", answer: "Strawberry (B12 + Caffeine), Mango (Ashwagandha + L-theanine), Grape (Melatonin + Magnesium), Lemon (Vitamin C), Mint (Vitamin D + B6).", tags: ["product","ingredients"] },
+            { id: "clenzy-pu-rechargeable", question: "Is it rechargeable?", answer: "No, it is disposable with a built-in battery.", tags: ["product"] },
+            { id: "clenzy-pu-experience", question: "Does it feel like vaping?", answer: "Yes—smooth vapor with moderate clouds, but no nicotine throat hit.", tags: ["usage"] }
+          ]
+        },
+        {
+          id: "clenzy-ingredients-safety",
+          name: "Ingredients & Safety",
+          items: [
+            { id: "clenzy-is-nicotine-free", question: "Nicotine-free?", answer: "Yes—100%, verified by independent lab tests.", tags: ["safety","ingredients"] },
+            { id: "clenzy-is-safe-ingredients", question: "Safe ingredients?", answer: "All FDA-approved for inhalation (PG, VG, vitamins, sucralose, natural flavors).", tags: ["ingredients"] },
+            { id: "clenzy-is-side-effects", question: "Side effects?", answer: "Possible mild dryness or irritation; discontinue use if symptoms persist.", tags: ["safety"] },
+            { id: "clenzy-is-age", question: "Age restriction?", answer: "21+ only.", tags: ["policy"] },
+            { id: "clenzy-is-medical", question: "Medical use?", answer: "Not recommended for pregnant or breastfeeding individuals or those with respiratory conditions without doctor’s advice.", tags: ["medical","safety"] }
+          ]
+        },
+        {
+          id: "clenzy-shipping-orders",
+          name: "Shipping & Orders",
+          items: [
+            { id: "clenzy-so-delivery-times", question: "Delivery times?", answer: "US / Europe / Australia: 6–14 business days; Canada: 6–15 days; Singapore / Japan: 8–14 days.", tags: ["shipping"] },
+            { id: "clenzy-so-free-shipping", question: "Free shipping?", answer: "Yes, on orders over $50.", tags: ["shipping","pricing"] },
+            { id: "clenzy-so-tracking", question: "Tracking?", answer: "Tracking sent via email once shipped (1–3 business days).", tags: ["shipping"] },
+            { id: "clenzy-so-order-changes", question: "Order changes/cancel?", answer: "Possible only before shipment.", tags: ["orders"] }
+          ]
+        },
+        {
+          id: "clenzy-returns-refunds",
+          name: "Returns & Refunds",
+          items: [
+            { id: "clenzy-rr-window", question: "Return window?", answer: "30 days, money-back guarantee.", tags: ["returns"] },
+            { id: "clenzy-rr-opened-product", question: "Opened product?", answer: "No need to return—refund still honored.", tags: ["returns"] },
+            { id: "clenzy-rr-defective", question: "Defective product?", answer: "Replacement or refund within 24–48 hours.", tags: ["returns","defect"] },
+            { id: "clenzy-rr-warranty", question: "Warranty?", answer: "30 days against defects.", tags: ["warranty"] }
+          ]
+        },
+        {
+          id: "clenzy-payments",
+          name: "Payments",
+          items: [
+            { id: "clenzy-pay-accepted", question: "Accepted?", answer: "Visa, Mastercard, Amex, Discover, JCB, Diners Club, Apple Pay, Venmo.", tags: ["payments"] },
+            { id: "clenzy-pay-not-accepted", question: "Not accepted?", answer: "PayPal, installment plans.", tags: ["payments"] }
+          ]
+        }
+      ]
+    },
+    {
+      id: "hizoo",
+      name: "HiZoo",
+      categories: [
+        {
+          id: "hizoo-product-usage",
+          name: "Product & Usage",
+          items: [
+            { id: "hizoo-pu-what-is", question: "What is HiZoo?", answer: "A patented neck & shoulder massager engineered for lymphatic drainage and stress/pain relief.", tags: ["product"] },
+            { id: "hizoo-pu-models-price", question: "Models & Price?", answer: "Neck & Shoulder: $149; Pillow: $199.", tags: ["pricing"] },
+            { id: "hizoo-pu-key-features", question: "Key features?", answer: "Four-prong design, ThermoKnead™ 3D (42°C heat, smart pressure sensors), cordless USB-C rechargeable.", tags: ["features"] },
+            { id: "hizoo-pu-battery", question: "Battery?", answer: "Approx. 1.5 hrs use; ~3 hrs charging.", tags: ["battery"] },
+            { id: "hizoo-pu-auto-shutoff", question: "Auto shut-off?", answer: "Yes, 10 minutes per session.", tags: ["safety"] },
+            { id: "hizoo-pu-multiuse", question: "Multi-use?", answer: "Yes—neck, shoulders, back, arms, legs.", tags: ["usage"] }
+          ]
+        },
+        {
+          id: "hizoo-safety-care",
+          name: "Safety & Care",
+          items: [
+            { id: "hizoo-sc-materials", question: "Materials?", answer: "PU leather + mesh; wipe with a damp cloth.", tags: ["care"] },
+            { id: "hizoo-sc-adult-only", question: "Adult use only?", answer: "Yes.", tags: ["safety"] },
+            { id: "hizoo-sc-consult-doctor", question: "Consult doctor?", answer: "Advised if post-surgery, pregnant, or with medical conditions.", tags: ["medical"] },
+            { id: "hizoo-sc-rollers-hard", question: "If rollers feel too hard?", answer: "Use lower intensity or heat, or place a towel between skin and device.", tags: ["usage","comfort"] }
+          ]
+        },
+        {
+          id: "hizoo-shipping-orders",
+          name: "Shipping & Orders",
+          items: [
+            { id: "hizoo-so-free-shipping", question: "Free shipping?", answer: "Yes, worldwide.", tags: ["shipping"] },
+            { id: "hizoo-so-delivery-times", question: "Delivery times?", answer: "US / Canada / Australia / UK: 5–10 business days; Europe: 7–12 business days.", tags: ["shipping"] },
+            { id: "hizoo-so-tracking", question: "Tracking?", answer: "Tracking active 1–3 days after dispatch.", tags: ["shipping"] },
+            { id: "hizoo-so-expedited", question: "Expedited option?", answer: "Yes, DHL (extra cost).", tags: ["shipping"] },
+            { id: "hizoo-so-order-changes", question: "Order changes/cancel?", answer: "Before shipping cutoff (3 AM Central next day).", tags: ["orders"] }
+          ]
+        },
+        {
+          id: "hizoo-returns-warranty",
+          name: "Returns & Warranty",
+          items: [
+            { id: "hizoo-rw-return-window", question: "Return window?", answer: "30 days (like-new, all accessories).", tags: ["returns"] },
+            { id: "hizoo-rw-refund-processing", question: "Refund processing?", answer: "5–10 business days after inspection.", tags: ["returns"] },
+            { id: "hizoo-rw-warranty", question: "Warranty?", answer: "2 years—covers defects/malfunctions.", tags: ["warranty"] },
+            { id: "hizoo-rw-missing-accessories", question: "Missing accessories?", answer: "Fees deducted: Cable $2, Bag $2, Packaging $5, Card $1.", tags: ["returns"] },
+            { id: "hizoo-rw-exchanges", question: "Exchanges?", answer: "Allowed—free shipping for defective or wrong items.", tags: ["returns"] }
+          ]
+        },
+        {
+          id: "hizoo-payments",
+            name: "Payments",
+            items: [
+              { id: "hizoo-pay-accepted", question: "Accepted?", answer: "Visa, Mastercard, Amex, Discover, PayPal, Apple Pay, Google Pay, Shop Pay, Venmo, Bancontact, iDEAL.", tags: ["payments"] },
+              { id: "hizoo-pay-installments", question: "Installments?", answer: "Available via Shop Pay.", tags: ["payments"] },
+              { id: "hizoo-pay-currency", question: "Currency?", answer: "USD only.", tags: ["payments"] }
+            ]
+        }
+      ]
+    },
+    {
+      id: "sla-playbook",
+      name: "SLA Playbook",
+      categories: [
+        {
+          id: "sla-general",
+          name: "General SLA Principles",
+          items: [
+            { id: "sla-gen-kpis", question: "What are the KPIs for support agents?", answer: "CSAT: high target; First Response Time: 10 min; Resolution Time: 24 hrs; Messages/Ticket: ~2.", tags: ["kpi"] },
+            { id: "sla-gen-case-log-speed", question: "How quickly should cases be logged?", answer: "Within 2 business hours of receiving the ticket.", tags: ["process"] }
+          ]
+        },
+        {
+          id: "sla-order-issues",
+          name: "Order Issues",
+          items: [
+            { id: "sla-oi-cancel-hold", question: "Cancel/Hold Shipment?", answer: "Log within 2 hrs. Logistics confirms within 24 hrs. Inform customer within 2 hrs of update.", tags: ["orders"] },
+            { id: "sla-oi-shipping-info-update", question: "Shipping Info Update?", answer: "Log within 2 hrs. Logistics updates within 24 hrs. Confirm with customer within 2 hrs.", tags: ["orders"] },
+            { id: "sla-oi-no-tracking-update", question: "No Tracking Update?", answer: "Escalate if no movement after 14 days. Update customer within 2 hrs of logistics reply.", tags: ["escalation"] },
+            { id: "sla-oi-failed-delivery", question: "Failed Delivery/Exception?", answer: "Log within 2 hrs. Logistics investigates within 24 hrs. Offer re-delivery, pickup, or refund.", tags: ["orders"] },
+            { id: "sla-oi-delivered-not-received", question: "Delivered but Not Received?", answer: "Log within 2 hrs. Logistics checks Proof of Delivery in 24 hrs. If no POD, offer reship or refund.", tags: ["orders"] }
+          ]
+        },
+        {
+          id: "sla-product-issues",
+          name: "Product Issues",
+          items: [
+            { id: "sla-pi-damaged", question: "Damaged or Malfunctioning Product?", answer: "Request photo/video. Logistics confirms within 48 hrs. Replacement or refund arranged.", tags: ["product","defect"] },
+            { id: "sla-pi-detailed-questions", question: "Detailed Product Questions?", answer: "Log within 2 hrs. Logistics/factory responds in 48 hrs. Update customer within 2 hrs.", tags: ["product"] }
+          ]
+        },
+        {
+          id: "sla-returns-refunds",
+          name: "Returns & Refunds",
+          items: [
+            { id: "sla-rr-non-defective", question: "Non-Defective Returns?", answer: "30-day window. Customer pays return shipping. Refund after inspection.", tags: ["returns"] },
+            { id: "sla-rr-refund-escalation", question: "Refund Escalation?", answer: "Requires escalation agent approval before processing refunds.", tags: ["escalation"] }
+          ]
+        },
+        {
+          id: "sla-ticket-handling",
+          name: "Ticket Handling",
+          items: [
+            { id: "sla-th-customer-awaiting-response", question: "Customer Awaiting Response?", answer: "Snooze max 2 business days. Follow-up if no reply. Close after second follow-up with no response.", tags: ["process"] }
+          ]
+        },
+        {
+          id: "sla-escalations",
+          name: "Escalations",
+          items: [
+            { id: "sla-esc-legal-high-risk", question: "When to escalate legal/high-risk cases?", answer: "Immediately flag as legal. Escalate to CX escalation agent. No direct customer communication until advised.", tags: ["legal","escalation"] }
+          ]
+        },
+        {
+          id: "sla-priority-rules",
+          name: "Priority Rules",
+          items: [
+            { id: "sla-pr-reship-vs-refund", question: "Reship vs Refund?", answer: "Defective/lost/no POD: Offer reshipment first. If refused, process refund. Change of mind: Refund only (shipping at customer’s cost).", tags: ["policy"] }
+          ]
+        }
+      ]
+    }
+  ]
+};
+
+/* STATE */
+const state = { search:"", collection:"", category:"", tags:new Set() };
+
+/* ELEMENTS */
+const searchInput = document.getElementById('search');
+const collectionFilter = document.getElementById('collection-filter');
+const categoryFilter = document.getElementById('category-filter');
+const tagsPanel = document.getElementById('tags-panel');
+const collectionsContainer = document.getElementById('collections-container');
+const noResultsEl = document.getElementById('no-results');
+const expandAllBtn = document.getElementById('expand-all');
+const collapseAllBtn = document.getElementById('collapse-all');
+const clearFiltersBtn = document.getElementById('clear-filters');
+const clearTagsBtn = document.getElementById('clear-tags');
+const visibleCountEl = document.getElementById('visible-count');
+
+function escapeHtml(str=''){ return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function initFilters(){
+  // Collections
+  DATA.collections.forEach(c=>{
+    const opt=document.createElement('option');
+    opt.value=c.id;
+    opt.textContent=c.name;
+    collectionFilter.appendChild(opt);
+  });
+  rebuildCategoryOptions();
+  // Tags
+  const tagSet=new Set();
+  DATA.collections.forEach(c=>c.categories.forEach(cat=>cat.items.forEach(it=>it.tags?.forEach(t=>tagSet.add(t)))));
+  [...tagSet].sort().forEach(tag=>{
+    const btn=document.createElement('button');
+    btn.type='button';
+    btn.textContent=tag;
+    btn.className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide rounded-full bg-white/10 hover:bg-white/15 active:bg-white/20 border border-white/10 text-white/70 transition";
+    btn.dataset.tag=tag;
+    btn.addEventListener('click',()=>{
+      const active=state.tags.has(tag);
+      if(active){
+        state.tags.delete(tag);
+        btn.classList.remove('bg-fuchsia-500','text-white','shadow-soft','border-fuchsia-400/60');
+        btn.classList.add('bg-white/10','text-white/70','border-white/10');
+      } else {
+        state.tags.add(tag);
+        btn.classList.add('bg-fuchsia-500','text-white','shadow-soft','border-fuchsia-400/60');
+        btn.classList.remove('bg-white/10','text-white/70','border-white/10');
+      }
+      applyFilters();
+    });
+    tagsPanel.appendChild(btn);
+  });
+}
+
+function rebuildCategoryOptions(){
+  const prev=categoryFilter.value;
+  categoryFilter.innerHTML='<option value="">All Categories</option>';
+  let cats=[];
+  if(state.collection){
+    const c=DATA.collections.find(x=>x.id===state.collection);
+    if(c) cats=c.categories.map(cat=>({id:cat.id,name:cat.name}));
+  } else {
+    const map=new Map();
+    DATA.collections.forEach(c=>c.categories.forEach(cat=>{ if(!map.has(cat.id)) map.set(cat.id,cat.name); }));
+    cats=[...map.entries()].map(([id,name])=>({id,name}));
+  }
+  cats.sort((a,b)=>a.name.localeCompare(b.name)).forEach(cat=>{
+    const opt=document.createElement('option');
+    opt.value=cat.id;
+    opt.textContent=cat.name;
+    categoryFilter.appendChild(opt);
+  });
+  if(![...categoryFilter.options].some(o=>o.value===prev)) state.category=""; else categoryFilter.value=prev;
+}
+
+function renderCollections(){
+  collectionsContainer.innerHTML='';
+  DATA.collections.forEach(col=>{
+    const colSection=document.createElement('section');
+    colSection.dataset.collection=col.id;
+    colSection.className="space-y-6";
+    const total=col.categories.reduce((a,c)=>a+c.items.length,0);
+    colSection.innerHTML=`
+      <div class="flex items-center justify-between">
+        <h2 class="text-xl font-bold tracking-wide flex items-center gap-3">
+          <span class="inline-flex w-2.5 h-2.5 rounded-full bg-fuchsia-400"></span>
+          <span>${escapeHtml(col.name)}</span>
+        </h2>
+        <span class="text-xs text-white/60 font-medium">${total} items</span>
+      </div>`;
+    col.categories.forEach(cat=>{
+      const catBlock=document.createElement('div');
+      catBlock.dataset.category=cat.id;
+      catBlock.className="rounded-2xl bg-white/10 backdrop-blur ring-1 ring-white/15 shadow-soft overflow-hidden";
+      const catHeaderId=`cat-${cat.id}`;
+      const catHeader=document.createElement('div');
+      catHeader.className="flex items-center justify-between px-5 py-4";
+      catHeader.innerHTML=`
+        <h3 id="${catHeaderId}" class="text-sm font-semibold uppercase tracking-wide text-white/70 flex items-center gap-2">
+          <span class="w-2 h-2 rounded bg-indigo-400"></span>${escapeHtml(cat.name)}
+        </h3>
+        <span class="text-[11px] text-white/60">${cat.items.length}</span>`;
+      const list=document.createElement('ul');
+      list.className="divide-y divide-white/10";
+      list.setAttribute('role','group');
+      list.setAttribute('aria-labelledby',catHeaderId);
+      cat.items.forEach(item=>{
+        const li=document.createElement('li');
+        li.className="group";
+        const btn=document.createElement('button');
+        btn.type='button';
+        btn.id=`${item.id}-btn`;
+        btn.className="w-full flex items-start justify-between gap-4 text-left px-5 py-4 hover:bg-white/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400/70 transition";
+        btn.setAttribute('aria-expanded','false');
+        btn.setAttribute('aria-controls',`${item.id}-panel`);
+        const tagsHtml=(item.tags||[]).map(t=>`<span class="px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide rounded-full bg-white/10 ring-1 ring-white/15 text-white/60">${escapeHtml(t)}</span>`).join(' ');
+        btn.innerHTML=`
+          <span class="flex-1 font-medium leading-snug text-sm">${escapeHtml(item.question)}</span>
+          <span class="flex items-center gap-2 shrink-0">
+            <span class="hidden sm:flex flex-wrap gap-1">${tagsHtml}</span>
+            <svg class="transition-transform duration-300 ease-out text-white/70" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+              <path fill="currentColor" d="M8.6 16.6L13.2 12L8.6 7.4L10 6l6 6l-6 6z"/>
+            </svg>
+          </span>`;
+        const bodyWrap=document.createElement('div');
+        bodyWrap.id=`${item.id}-panel`;
+        bodyWrap.className="accordion-body";
+        bodyWrap.setAttribute('role','region');
+        bodyWrap.setAttribute('aria-labelledby',btn.id);
+        const inner=document.createElement('div');
+        inner.className="accordion-inner";
+        inner.innerHTML=`<div class="px-5 pb-5 pt-1 text-sm leading-relaxed text-white/80"><p class="mb-0">${escapeHtml(item.answer)}</p></div>`;
+        bodyWrap.appendChild(inner);
+        btn.addEventListener('click',()=>toggleItem(btn,bodyWrap));
+        li.appendChild(btn);
+        li.appendChild(bodyWrap);
+        list.appendChild(li);
+      });
+      catBlock.appendChild(catHeader);
+      catBlock.appendChild(list);
+      colSection.appendChild(catBlock);
+    });
+    collectionsContainer.appendChild(colSection);
+  });
+  attachKeyboardNavigation();
+  applyFilters();
+  openHashItem();
+}
+
+function toggleItem(btn,panel,forceOpen){
+  const expanded=btn.getAttribute('aria-expanded')==='true';
+  const open=forceOpen!==undefined ? forceOpen : !expanded;
+  btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+  const icon=btn.querySelector('svg');
+  if(open){
+    panel.classList.add('open');
+    icon?.classList.add('rotate-90');
+  } else {
+    panel.classList.remove('open');
+    icon?.classList.remove('rotate-90');
+  }
+}
+
+function expandCollapseVisible(expand){
+  document.querySelectorAll('.accordion-body').forEach(panel=>{
+    if(panel.closest('li').classList.contains('hidden')) return;
+    const btn=panel.previousElementSibling;
+    toggleItem(btn,panel,expand);
+  });
+  expandAllBtn.textContent = expand ? 'Collapse All' : 'Expand All';
+}
+
+function applyFilters(){
+  const q=state.search.toLowerCase().trim();
+  const tagActive=state.tags.size>0;
+  let visible=0;
+
+  document.querySelectorAll('mark.search-highlight').forEach(m=>m.replaceWith(m.textContent));
+
+  DATA.collections.forEach(col=>{
+    const colSection=collectionsContainer.querySelector(`[data-collection="${col.id}"]`);
+    let colHas=false;
+    col.categories.forEach(cat=>{
+      const catBlock=colSection.querySelector(`[data-category="${cat.id}"]`);
+      let catHas=false;
+      cat.items.forEach(item=>{
+        const btn=document.getElementById(item.id+'-btn');
+        if(!btn) return;
+        const li=btn.parentElement;
+        const tagMatch=!tagActive || [...state.tags].every(t=>item.tags?.includes(t));
+        const colMatch=!state.collection || state.collection===col.id;
+        const catMatch=!state.category || state.category===cat.id;
+        let searchMatch=true;
+        if(q){
+          searchMatch=(item.question+' '+item.answer+' '+(item.tags||[]).join(' ')).toLowerCase().includes(q);
+        }
+        const show=tagMatch && colMatch && catMatch && searchMatch;
+        li.classList.toggle('hidden', !show);
+        if(show){
+          catHas=true; colHas=true; visible++;
+          if(q){ highlight(btn.querySelector('.font-medium'), q, item.question); }
+        }
+      });
+      catBlock.classList.toggle('hidden', !catHas);
+    });
+    colSection.classList.toggle('hidden', !colHas);
+  });
+
+  noResultsEl.classList.toggle('hidden', visible>0);
+  visibleCountEl.textContent = visible ? `${visible} visible` : '0 visible';
+}
+
+function highlight(el,term,orig){
+  const text=orig;
+  const idx=text.toLowerCase().indexOf(term.toLowerCase());
+  if(idx===-1){ el.textContent=text; return; }
+  const before=escapeHtml(text.slice(0,idx));
+  const match=escapeHtml(text.slice(idx,idx+term.length));
+  const after=escapeHtml(text.slice(idx+term.length));
+  el.innerHTML = before + '<mark class="search-highlight">'+match+'</mark>' + after;
+}
+
+function attachKeyboardNavigation(){
+  const groups=document.querySelectorAll('ul[role="group"]');
+  groups.forEach(group=>{
+    const buttons=group.querySelectorAll('button[aria-expanded]');
+    buttons.forEach(btn=>{
+      btn.addEventListener('keydown',e=>{
+        const list=[...buttons];
+        const i=list.indexOf(btn);
+        if(e.key==='ArrowDown'){ e.preventDefault(); (list[i+1]||list[0]).focus(); }
+        else if(e.key==='ArrowUp'){ e.preventDefault(); (list[i-1]||list[list.length-1]).focus(); }
+        else if(e.key==='Home'){ e.preventDefault(); list[0].focus(); }
+        else if(e.key==='End'){ e.preventDefault(); list[list.length-1].focus(); }
+        else if(e.key==='Enter'||e.key===' '){ e.preventDefault(); btn.click(); }
+      });
+    });
+  });
+}
+
+function openHashItem(){
+  const id=location.hash.slice(1);
+  if(!id) return;
+  const btn=document.getElementById(id+'-btn');
+  if(btn){
+    const panel=document.getElementById(id+'-panel');
+    toggleItem(btn,panel,true);
+    setTimeout(()=>{ btn.scrollIntoView({behavior:'smooth',block:'center'}); btn.focus(); },150);
+  }
+}
+
+/* EVENTS */
+searchInput.addEventListener('input',()=>{ state.search=searchInput.value; applyFilters(); });
+collectionFilter.addEventListener('change',e=>{ state.collection=e.target.value; rebuildCategoryOptions(); applyFilters(); });
+categoryFilter.addEventListener('change',e=>{ state.category=e.target.value; applyFilters(); });
+expandAllBtn.addEventListener('click',()=>{
+  const expanding=expandAllBtn.textContent.trim().startsWith('Expand');
+  expandCollapseVisible(expanding);
+});
+collapseAllBtn.addEventListener('click',()=>expandCollapseVisible(false));
+clearFiltersBtn.addEventListener('click',()=>{
+  state.search=''; state.collection=''; state.category=''; state.tags.clear();
+  searchInput.value=''; collectionFilter.value='';
+  rebuildCategoryOptions();
+  tagsPanel.querySelectorAll('button').forEach(b=>{
+    b.classList.remove('bg-fuchsia-500','text-white','shadow-soft','border-fuchsia-400/60');
+    b.classList.add('bg-white/10','text-white/70','border-white/10');
+  });
+  applyFilters();
+  expandCollapseVisible(false);
+});
+clearTagsBtn.addEventListener('click',()=>{
+  state.tags.clear();
+  tagsPanel.querySelectorAll('button').forEach(b=>{
+    b.classList.remove('bg-fuchsia-500','text-white','shadow-soft','border-fuchsia-400/60');
+    b.classList.add('bg-white/10','text-white/70','border-white/10');
+  });
+  applyFilters();
+});
+window.addEventListener('keydown',e=>{
+  if(e.key==='/' && document.activeElement.tagName!=='INPUT' && document.activeElement.tagName!=='TEXTAREA'){
+    e.preventDefault(); searchInput.focus();
+  } else if(e.key==='Escape' && document.activeElement===searchInput && searchInput.value){
+    searchInput.value=''; state.search=''; applyFilters();
+  }
+});
+window.addEventListener('hashchange', openHashItem);
+
+/* INIT */
+initFilters();
+renderCollections();
+applyFilters();
+openHashItem();
+</script>
+</body>
+</html>
